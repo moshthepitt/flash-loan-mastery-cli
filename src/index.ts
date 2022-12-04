@@ -14,7 +14,7 @@ import {
   initFlashLoanPool,
   withdrawFromFlashLoanPool,
 } from "./flm";
-import { createCommonTokenAccounts } from "./jup";
+import { createCommonTokenAccounts, jupiterSimpleArb } from "./jup";
 import { loadKeypair } from "./utils";
 
 const CONNECTION = new Connection(RPC_ENDPOINT, {
@@ -144,6 +144,23 @@ program
   )
   .action(async ({ keypair }) => {
     await createCommonTokenAccounts(CONNECTION, loadKeypair(keypair));
+  });
+
+program
+  .command("simple-jupiter-arb")
+  .requiredOption("-k, --keypair <keypair>")
+  .requiredOption("-m1, --token-mint1 <PublicKey>")
+  .requiredOption("-m2, --token-mint2 <PublicKey>")
+  .requiredOption("-a, --amount <number>", "The amount")
+  .addHelpText("beforeAll", "Perform a simple arb using Jupiter")
+  .action(async ({ keypair, tokenMint1, tokenMint2, amount }) => {
+    await jupiterSimpleArb(
+      CONNECTION,
+      loadKeypair(keypair),
+      new PublicKey(tokenMint1),
+      new PublicKey(tokenMint2),
+      Number(amount)
+    );
   });
 
 program.parse();
