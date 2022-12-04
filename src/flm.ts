@@ -129,6 +129,7 @@ export const getFlashLoanInstructions = async (
   setUpInstruction: web3.TransactionInstruction | undefined;
   borrow: web3.TransactionInstruction;
   repay: web3.TransactionInstruction;
+  repaymentAmount: BN;
 }> => {
   const { program } = setUp(connection, wallet);
   const mintAccount = await getMint(connection, mint);
