@@ -20,8 +20,9 @@ export const SOL_MINT = new PublicKey(
 );
 
 export const confirmTransactionInitialTimeout =
-    60 * 1000; /** time to allow for the server to initially process a transaction (in milliseconds) */
+  60 *
+  1000; /** time to allow for the server to initially process a transaction (in milliseconds) */
 export const providerOptions = {
-  preflightCommitment: 'confirmed' as Commitment,
-  commitment: 'confirmed' as Commitment,
+  preflightCommitment: "confirmed" as Commitment,
+  commitment: "confirmed" as Commitment,
 };
