@@ -8,7 +8,7 @@ import {
   confirmTransactionInitialTimeout,
   providerOptions,
 } from "./constants";
-import { exampleFlashLoan } from "./examples";
+import { exampleFlashLoan, exampleFlashLoanWithLookupTable } from "./examples";
 import {
   depositIntoFlashLoanPool,
   initFlashLoanPool,
@@ -127,6 +127,32 @@ program
   )
   .action(async ({ keypair, tokenMint, amount, referralWallet }) => {
     await exampleFlashLoan(
+      CONNECTION,
+      loadKeypair(keypair),
+      new PublicKey(tokenMint),
+      Number(amount),
+      referralWallet ? new PublicKey(referralWallet) : undefined
+    );
+  });
+
+  program
+  .command("example-flash-loan-with-lookup-table")
+  .requiredOption(
+    "-k, --keypair <Keypair path>",
+    "File path to wallet that executes the transaction"
+  )
+  .requiredOption(
+    "-tm, --token-mint <PublicKey>",
+    "Mint address of the token to be borrowed via flash loan"
+  )
+  .requiredOption("-a, --amount <number>", "The amount")
+  .option("-r, --referral-wallet <PublicKey>", "Referral wallet")
+  .addHelpText(
+    "beforeAll",
+    "Execute an example of a flash loan instruction using Solana v0 transactions - borrow and immediately repay"
+  )
+  .action(async ({ keypair, tokenMint, amount, referralWallet }) => {
+    await exampleFlashLoanWithLookupTable(
       CONNECTION,
       loadKeypair(keypair),
       new PublicKey(tokenMint),

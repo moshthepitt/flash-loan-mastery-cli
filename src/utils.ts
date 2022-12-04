@@ -1,6 +1,6 @@
 import { AnchorProvider } from "@project-serum/anchor";
 import {
-  Connection,
+  AddressLookupTableProgram,
   Keypair,
   PublicKey,
   TransactionInstruction,
@@ -21,10 +21,45 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function sendTransactionV0WithoutLookupTable(
+export const createLookupTable = async (
+  provider: AnchorProvider,
+  payer: Keypair
+): Promise<{
+  lookUpTable: PublicKey;
+  txId: string;
+}> => {
+  const result = AddressLookupTableProgram.createLookupTable({
+    authority: payer.publicKey,
+    payer: payer.publicKey,
+    recentSlot: await provider.connection.getSlot(),
+  });
+
+  return {
+    lookUpTable: result[1],
+    txId: await sendTransactionV0(provider, payer, [result[0]]),
+  };
+};
+
+export const addKeysToLookupTable = async (
   provider: AnchorProvider,
   payer: Keypair,
-  instructions: TransactionInstruction[],
+  lookupTablePubkey: PublicKey,
+  keys: PublicKey[]
+): Promise<string> => {
+  const ix = AddressLookupTableProgram.extendLookupTable({
+    addresses: keys,
+    authority: payer.publicKey,
+    lookupTable: lookupTablePubkey,
+    payer: payer.publicKey,
+  });
+
+  return await sendTransactionV0(provider, payer, [ix]);
+};
+
+export async function sendTransactionV0(
+  provider: AnchorProvider,
+  payer: Keypair,
+  instructions: TransactionInstruction[]
 ): Promise<string> {
   let blockhash = await provider.connection
     .getLatestBlockhash()
@@ -45,7 +80,7 @@ export async function sendTransactionV0WithLookupTable(
   provider: AnchorProvider,
   payer: Keypair,
   lookupTablePubkey: PublicKey,
-  instructions: TransactionInstruction[],
+  instructions: TransactionInstruction[]
 ): Promise<string> {
   const lookupTableAccount = await provider.connection
     .getAddressLookupTable(lookupTablePubkey)
