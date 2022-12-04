@@ -1,6 +1,7 @@
 import { web3 } from "@project-serum/anchor";
-import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import { setUp, getFlashLoanInstructions } from "./flm";
+import { sendTransactionV0WithoutLookupTable } from "./utils";
 
 export const exampleFlashLoan = async (
   connection: web3.Connection,
@@ -18,12 +19,10 @@ export const exampleFlashLoan = async (
     referralWallet
   );
 
-  const tx = new Transaction();
+  const ixs = [result.borrow, result.repay];
   if (result.setUpInstruction) {
-    tx.add(result.setUpInstruction);
+    ixs.unshift(result.setUpInstruction);
   }
-  tx.add(result.borrow).add(result.repay);
-  const txId = await provider.sendAndConfirm(tx, []);
-
+  const txId = await sendTransactionV0WithoutLookupTable(provider, wallet, ixs);
   console.log("Transaction signature", txId);
 };
