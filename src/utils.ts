@@ -25,6 +25,7 @@ export function sleep(ms: number): Promise<void> {
 export const createLookupTable = async (
   provider: AnchorProvider,
   payer: Keypair,
+  doPrint = true,
   maxRetries = 5
 ): Promise<{
   lookUpTable: PublicKey;
@@ -40,7 +41,9 @@ export const createLookupTable = async (
         recentSlot: await provider.connection.getSlot(),
       });
       const txId = await sendTransactionV0(provider, payer, [result[0]]);
-      await printAddressLookupTable(provider.connection, result[1]);
+      if (doPrint) {
+        await printAddressLookupTable(provider.connection, result[1]);
+      }
       return {
         lookUpTable: result[1],
         txId,
@@ -60,6 +63,7 @@ export const addKeysToLookupTable = async (
   payer: Keypair,
   lookupTablePubkey: PublicKey,
   keys: PublicKey[],
+  doPrint = true,
   maxRetries = 5
 ): Promise<string> => {
   let count = 0;
@@ -73,7 +77,9 @@ export const addKeysToLookupTable = async (
         payer: payer.publicKey,
       });
       const txId = await sendTransactionV0(provider, payer, [ix]);
-      await printAddressLookupTable(provider.connection, lookupTablePubkey);
+      if (doPrint) {
+        await printAddressLookupTable(provider.connection, lookupTablePubkey);
+      }
       return txId;
     } catch {
       console.log("retry add keys to address lookup table");
@@ -137,7 +143,8 @@ export async function sendTransactionV0WithLookupTable(
 
 export async function printAddressLookupTable(
   connection: Connection,
-  lookupTablePubkey: PublicKey
+  lookupTablePubkey: PublicKey,
+  printAddresses = true
 ): Promise<void> {
   await sleep(1000);
   const lookupTableAccount = await connection
@@ -147,10 +154,12 @@ export async function printAddressLookupTable(
     throw new Error("address lookup table does not exist");
   }
   console.log(`Address Lookup Table: ${lookupTablePubkey}`);
-  for (let i = 0; i < lookupTableAccount.state.addresses.length; i++) {
-    const address = lookupTableAccount.state.addresses[i];
-    if (address) {
-      console.log(`   Index: ${i}  Address: ${address.toBase58()}`);
+  if (printAddresses) {
+    for (let i = 0; i < lookupTableAccount.state.addresses.length; i++) {
+      const address = lookupTableAccount.state.addresses[i];
+      if (address) {
+        console.log(`   Index: ${i}  Address: ${address.toBase58()}`);
+      }
     }
   }
 }
@@ -161,3 +170,14 @@ export const removeDuplicateKeys = (keys: PublicKey[]) => {
     (it, index) => !strKeys.includes(it.toBase58(), index + 1)
   );
 };
+
+/** Break array into chunks */
+export const chunkArray = <T>(array: T[], chunkSize: number): T[][] => {
+  return Array.from(
+    { length: Math.ceil(array.length / chunkSize) },
+    (_, index) => array.slice(index * chunkSize, (index + 1) * chunkSize)
+  );
+};
+
+export const findDuplicates = <T>(arr: T[]): T[] =>
+  arr.filter((item, index) => arr.indexOf(item) != index);
