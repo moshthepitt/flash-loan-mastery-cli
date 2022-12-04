@@ -66,6 +66,7 @@ export const createCommonTokenAccounts = async (
   }
 };
 
+/** Doesn't work because of transaction size limits */
 export const jupiterSimpleArb = async (
   connection: Connection,
   wallet: Keypair,
