@@ -14,6 +14,7 @@ import {
   initFlashLoanPool,
   withdrawFromFlashLoanPool,
 } from "./flm";
+import { createCommonTokenAccounts } from "./jup";
 import { loadKeypair } from "./utils";
 
 const CONNECTION = new Connection(RPC_ENDPOINT, {
@@ -132,6 +133,17 @@ program
       Number(amount),
       referralWallet ? new PublicKey(referralWallet) : undefined
     );
+  });
+
+program
+  .command("create-token-accounts")
+  .requiredOption("-k, --keypair <keypair>")
+  .addHelpText(
+    "beforeAll",
+    "Create common token accounts based to reduce setup when trading or to setup platform fee accounts"
+  )
+  .action(async ({ keypair }) => {
+    await createCommonTokenAccounts(CONNECTION, loadKeypair(keypair));
   });
 
 program.parse();
