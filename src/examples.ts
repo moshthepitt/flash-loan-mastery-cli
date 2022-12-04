@@ -4,8 +4,10 @@ import { setUp, getFlashLoanInstructions } from "./flm";
 import {
   addKeysToLookupTable,
   createLookupTable,
+  printAddressLookupTable,
   sendTransactionV0,
   sendTransactionV0WithLookupTable,
+  sleep,
 } from "./utils";
 
 export const exampleFlashLoan = async (
@@ -43,7 +45,6 @@ export const exampleFlashLoanWithLookupTable = async (
 ) => {
   const { provider } = setUp(connection, wallet);
   const { lookUpTable } = await createLookupTable(provider, wallet);
-
   const result = await getFlashLoanInstructions(
     connection,
     wallet,
