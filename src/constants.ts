@@ -27,3 +27,7 @@ export const providerOptions = {
   commitment: "confirmed" as Commitment,
 };
 export const MAX_INSTRUCTIONS = 30;
+export const CACHE_PATH = process.env.FLM_CACHE_PATH || '.cache';
+export const CACHE_NAME = 'lookup_tables';
+export const DEVNET = 'devnet';
+export const MAINNET = 'mainnet';

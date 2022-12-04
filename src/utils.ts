@@ -9,6 +9,29 @@ import {
   VersionedTransaction,
 } from "@solana/web3.js";
 import fs from "fs";
+import path from 'path';
+import { CACHE_NAME, CACHE_PATH, DEVNET, MAINNET, RPC_ENDPOINT } from './constants';
+
+export function cachePath(cacheName: string = CACHE_NAME): string {
+  if (!fs.existsSync(CACHE_PATH)) {
+      fs.mkdirSync(CACHE_PATH);
+  }
+  return path.join(CACHE_PATH, `${cacheName}.json`);
+}
+
+export function loadCache<T>(cacheName: string, defaultObj: any = { items: {} }): T {
+  const path = cachePath(cacheName);
+  const defaultJson = defaultObj;
+  try {
+      return fs.existsSync(path) ? JSON.parse(fs.readFileSync(path).toString()) : defaultObj;
+  } catch {
+      return defaultJson as unknown as T;
+  }
+}
+
+export function saveCache<T>(cacheName: string, cacheContent: T): void {
+  fs.writeFileSync(cachePath(cacheName), JSON.stringify(cacheContent));
+}
 
 export function loadKeypair(keypairPath: string): Keypair {
   const loaded = Keypair.fromSecretKey(
@@ -44,6 +67,13 @@ export const createLookupTable = async (
       if (doPrint) {
         await printAddressLookupTable(provider.connection, result[1]);
       }
+
+      const env = RPC_ENDPOINT.includes(MAINNET) ? MAINNET : DEVNET;
+      const cacheName = `${env}-${CACHE_NAME}.json`;
+      const savedLookTables = loadCache<string[]>(cacheName, []);
+      savedLookTables.push(result[1].toBase58())
+      saveCache(cacheName, savedLookTables);
+
       return {
         lookUpTable: result[1],
         txId,
