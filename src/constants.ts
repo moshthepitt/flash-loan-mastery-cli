@@ -26,3 +26,4 @@ export const providerOptions = {
   preflightCommitment: "confirmed" as Commitment,
   commitment: "confirmed" as Commitment,
 };
+export const MAX_INSTRUCTIONS = 30;
