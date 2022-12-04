@@ -4,10 +4,7 @@ import { setUp, getFlashLoanInstructions } from "./flm";
 import {
   addKeysToLookupTable,
   createLookupTable,
-  printAddressLookupTable,
-  sendTransactionV0,
   sendTransactionV0WithLookupTable,
-  sleep,
 } from "./utils";
 
 export const exampleFlashLoan = async (
