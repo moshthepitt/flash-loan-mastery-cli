@@ -1,6 +1,14 @@
 import { BN } from "@project-serum/anchor";
 import JSBI from "jsbi";
-import { Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import {
+  AccountMeta,
+  ComputeBudgetProgram,
+  Connection,
+  Keypair,
+  PublicKey,
+  Transaction,
+  TransactionInstruction,
+} from "@solana/web3.js";
 import { Jupiter } from "@jup-ag/core";
 import {
   createAssociatedTokenAccountInstruction,
@@ -11,7 +19,17 @@ import {
   getAssociatedTokenAddressSync,
 } from "flash-loan-mastery";
 import { setUp, getFlashLoanInstructions } from "./flm";
-import { sleep } from "./utils";
+import {
+  addKeysToLookupTable,
+  chunkArray,
+  createLookupTable,
+  findDuplicates,
+  printAddressLookupTable,
+  removeDuplicateKeys,
+  sendTransactionV0WithLookupTable,
+  sleep,
+} from "./utils";
+import { MAX_INSTRUCTIONS } from "./constants";
 
 const COMMON_TOKEN_MINTS = new Set([
   "So11111111111111111111111111111111111111112", // wSOL
@@ -107,20 +125,19 @@ export const jupiterSimpleArb = async (
     const { routesInfos: sellRoutesInfos } = await jupiter.computeRoutes({
       inputMint: mint2,
       outputMint: mint1,
-      amount: buyRoutesInfos[0]?.outAmount || JSBI.BigInt(0),
+      amount: bestBuy?.outAmount || JSBI.BigInt(0),
       slippageBps: 1,
       forceFetch: true,
     });
     const bestSell = sellRoutesInfos[0];
     const outAmount = bestSell?.outAmount || JSBI.BigInt(0);
 
-    let msg = "no joy";
     if (
       new BN(JSBI.toNumber(outAmount)).gt(loanRepayAmount) &&
       bestBuy &&
       bestSell
     ) {
-      msg = "hit!";
+      const { lookUpTable } = await createLookupTable(provider, wallet);
       const { transactions: buyTransactions } = await jupiter.exchange({
         routeInfo: bestBuy,
       });
@@ -128,68 +145,118 @@ export const jupiterSimpleArb = async (
         routeInfo: bestSell,
       });
 
-      const setUpTx = new Transaction();
-      const cleanUpTx = new Transaction();
-      const moneyTx = new Transaction();
-      // setup flash loan
-      if (flashLoanResult.setUpInstruction) {
-        setUpTx.add(flashLoanResult.setUpInstruction);
-      }
+      const keyMetas: AccountMeta[] = [];
+      let computeIxDone = false;
+      const ixs = [];
+
       // setup jupiter buy
       if (buyTransactions.setupTransaction) {
-        setUpTx.add(...buyTransactions.setupTransaction.instructions);
-      }
-      // setup jupiter sell
-      if (sellTransactions.setupTransaction) {
-        setUpTx.add(...sellTransactions.setupTransaction.instructions);
-      }
-      if (
-        flashLoanResult.setUpInstruction ||
-        buyTransactions.setupTransaction ||
-        sellTransactions.setupTransaction
-      ) {
-        console.log(
-          "Set-up Transaction signature",
-          await provider.sendAndConfirm(setUpTx, [wallet])
+        ixs.push(...buyTransactions.setupTransaction.instructions);
+        keyMetas.push(
+          ...buyTransactions.setupTransaction.instructions
+            .map((it) => it.keys)
+            .flat()
         );
       }
+      // setup flash loan
+      if (flashLoanResult.setUpInstruction) {
+        ixs.push(flashLoanResult.setUpInstruction);
+        keyMetas.push(...flashLoanResult.setUpInstruction.keys.map((it) => it));
+      }
       // flash loan borrow
-      moneyTx.add(flashLoanResult.borrow);
+      ixs.push(flashLoanResult.borrow);
+      keyMetas.push(...flashLoanResult.borrow.keys.map((it) => it));
       // jupiter buy
-      moneyTx.add(...buyTransactions.swapTransaction.instructions);
-      // jupiter sell
-      moneyTx.add(...sellTransactions.swapTransaction.instructions);
-      // repay flash loan
-      moneyTx.add(flashLoanResult.repay);
-      // send tx
-      console.log(
-        "Arb Transaction signature",
-        await provider.sendAndConfirm(moneyTx, [wallet])
+      const computeIx = buyTransactions.swapTransaction.instructions[0];
+      if (
+        computeIx &&
+        computeIx.programId.equals(ComputeBudgetProgram.programId)
+      ) {
+        ixs.unshift(computeIx);
+        computeIxDone = true;
+        ixs.push(...buyTransactions.swapTransaction.instructions.slice(1));
+      } else {
+        ixs.push(...buyTransactions.swapTransaction.instructions);
+      }
+      keyMetas.push(
+        ...buyTransactions.swapTransaction.instructions
+          .map((it) => it.keys)
+          .flat()
       );
+      // setup jupiter sell
+      if (sellTransactions.setupTransaction) {
+        ixs.push(...sellTransactions.setupTransaction.instructions);
+        keyMetas.push(
+          ...sellTransactions.setupTransaction.instructions
+            .map((it) => it.keys)
+            .flat()
+        );
+      }
+      // jupiter sell
+      const computeIx2 = sellTransactions.swapTransaction.instructions[0];
+      if (
+        computeIx2 &&
+        computeIx2.programId.equals(ComputeBudgetProgram.programId)
+      ) {
+        if (!computeIxDone) {
+          ixs.unshift(computeIx2);
+        }
+        ixs.push(...sellTransactions.swapTransaction.instructions.slice(1));
+      } else {
+        ixs.push(...sellTransactions.swapTransaction.instructions);
+      }
+      keyMetas.push(
+        ...sellTransactions.swapTransaction.instructions
+          .map((it) => it.keys)
+          .flat()
+      );
+      // repay flash loan
+      ixs.push(flashLoanResult.repay);
+      keyMetas.push(...flashLoanResult.repay.keys.map((it) => it));
       // clean up jupiter buy
       if (buyTransactions.cleanupTransaction) {
-        cleanUpTx.add(...buyTransactions.cleanupTransaction.instructions);
+        ixs.push(...buyTransactions.cleanupTransaction.instructions);
+        keyMetas.push(
+          ...buyTransactions.cleanupTransaction.instructions
+            .map((it) => it.keys)
+            .flat()
+        );
       }
       // clean up jupiter sell
       if (sellTransactions.cleanupTransaction) {
-        cleanUpTx.add(...sellTransactions.cleanupTransaction.instructions);
-      }
-      if (
-        buyTransactions.cleanupTransaction ||
-        sellTransactions.cleanupTransaction
-      ) {
-        console.log(
-          "Clean-up Transaction signature",
-          await provider.sendAndConfirm(cleanUpTx, [wallet])
+        ixs.push(...sellTransactions.cleanupTransaction.instructions);
+        keyMetas.push(
+          ...sellTransactions.cleanupTransaction.instructions
+            .map((it) => it.keys)
+            .flat()
         );
       }
+      // add keys to lookup table
+      const keys = removeDuplicateKeys(keyMetas.map((it) => it.pubkey));
+      if (keys.length > MAX_INSTRUCTIONS) {
+        const chunkedKeys = chunkArray(keys, MAX_INSTRUCTIONS);
+        await Promise.all(
+          chunkedKeys.map((it) =>
+            addKeysToLookupTable(provider, wallet, lookUpTable, it, false)
+          )
+        );
+        await printAddressLookupTable(provider.connection, lookUpTable, false);
+      } else {
+        await addKeysToLookupTable(provider, wallet, lookUpTable, keys);
+      }
+      // send transaction
+      try {
+        const txId = await sendTransactionV0WithLookupTable(
+          provider,
+          wallet,
+          lookUpTable,
+          ixs
+        );
+        console.log("Transaction signature", txId);
+      } catch {
+        console.log("Transaction failed");
+      }
     }
-    console.log(
-      msg,
-      (JSBI.toNumber(outAmount) - loanRepayAmount.toNumber()) /
-        10 ** mint1Account.decimals,
-      Date.now()
-    );
     sleep(1000);
   }
 };
