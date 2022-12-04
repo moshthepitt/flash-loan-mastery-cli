@@ -7,7 +7,6 @@ import {
   Keypair,
   PublicKey,
   Transaction,
-  TransactionInstruction,
 } from "@solana/web3.js";
 import { Jupiter } from "@jup-ag/core";
 import {
@@ -23,7 +22,6 @@ import {
   addKeysToLookupTable,
   chunkArray,
   createLookupTable,
-  findDuplicates,
   printAddressLookupTable,
   removeDuplicateKeys,
   sendTransactionV0WithLookupTable,

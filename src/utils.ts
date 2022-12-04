@@ -48,9 +48,11 @@ export const createLookupTable = async (
         lookUpTable: result[1],
         txId,
       };
-    } catch {
+    } catch (err) {
       console.log("retry create address lookup table");
-      // do nothing
+      if (count === maxRetries) {
+        throw(err);
+      }
     }
   }
   throw new Error(
@@ -81,9 +83,11 @@ export const addKeysToLookupTable = async (
         await printAddressLookupTable(provider.connection, lookupTablePubkey);
       }
       return txId;
-    } catch {
+    } catch (err) {
       console.log("retry add keys to address lookup table");
-      // do nothing
+      if (count === maxRetries) {
+        throw(err);
+      }
     }
   }
   throw new Error(
