@@ -68,7 +68,7 @@ export const createLookupTable = async (
         await printAddressLookupTable(provider.connection, result[1]);
       }
 
-      const env = RPC_ENDPOINT.includes(MAINNET) ? MAINNET : DEVNET;
+      const env = RPC_ENDPOINT.includes(DEVNET) ? DEVNET : MAINNET;
       const cacheName = `${env}-${CACHE_NAME}.json`;
       const savedLookTables = loadCache<string[]>(cacheName, []);
       savedLookTables.push(result[1].toBase58())
