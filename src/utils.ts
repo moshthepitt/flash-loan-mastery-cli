@@ -9,23 +9,35 @@ import {
   VersionedTransaction,
 } from "@solana/web3.js";
 import fs from "fs";
-import path from 'path';
-import { CACHE_NAME, CACHE_PATH, DEVNET, MAINNET, RPC_ENDPOINT } from './constants';
+import path from "path";
+import {
+  CACHE_NAME,
+  CACHE_PATH,
+  DEVNET,
+  MAINNET,
+  RPC_ENDPOINT,
+  MAX_IX_RETRIES,
+} from "./constants";
 
 export function cachePath(cacheName: string = CACHE_NAME): string {
   if (!fs.existsSync(CACHE_PATH)) {
-      fs.mkdirSync(CACHE_PATH);
+    fs.mkdirSync(CACHE_PATH);
   }
   return path.join(CACHE_PATH, `${cacheName}.json`);
 }
 
-export function loadCache<T>(cacheName: string, defaultObj: any = { items: {} }): T {
+export function loadCache<T>(
+  cacheName: string,
+  defaultObj: any = { items: {} }
+): T {
   const path = cachePath(cacheName);
   const defaultJson = defaultObj;
   try {
-      return fs.existsSync(path) ? JSON.parse(fs.readFileSync(path).toString()) : defaultObj;
+    return fs.existsSync(path)
+      ? JSON.parse(fs.readFileSync(path).toString())
+      : defaultObj;
   } catch {
-      return defaultJson as unknown as T;
+    return defaultJson as unknown as T;
   }
 }
 
@@ -49,7 +61,7 @@ export const createLookupTable = async (
   provider: AnchorProvider,
   payer: Keypair,
   doPrint = true,
-  maxRetries = 5
+  maxRetries = MAX_IX_RETRIES
 ): Promise<{
   lookUpTable: PublicKey;
   txId: string;
@@ -71,7 +83,7 @@ export const createLookupTable = async (
       const env = RPC_ENDPOINT.includes(DEVNET) ? DEVNET : MAINNET;
       const cacheName = `${env}-${CACHE_NAME}.json`;
       const savedLookTables = loadCache<string[]>(cacheName, []);
-      savedLookTables.push(result[1].toBase58())
+      savedLookTables.push(result[1].toBase58());
       saveCache(cacheName, savedLookTables);
 
       return {
@@ -81,7 +93,7 @@ export const createLookupTable = async (
     } catch (err) {
       console.log("retry create address lookup table");
       if (count === maxRetries) {
-        throw(err);
+        throw err;
       }
     }
   }
@@ -96,7 +108,7 @@ export const addKeysToLookupTable = async (
   lookupTablePubkey: PublicKey,
   keys: PublicKey[],
   doPrint = true,
-  maxRetries = 5
+  maxRetries = MAX_IX_RETRIES
 ): Promise<string> => {
   let count = 0;
   while (count < maxRetries) {
@@ -116,7 +128,7 @@ export const addKeysToLookupTable = async (
     } catch (err) {
       console.log("retry add keys to address lookup table");
       if (count === maxRetries) {
-        throw(err);
+        throw err;
       }
     }
   }
@@ -178,9 +190,10 @@ export async function sendTransactionV0WithLookupTable(
 export async function printAddressLookupTable(
   connection: Connection,
   lookupTablePubkey: PublicKey,
-  printAddresses = true
+  printAddresses = true,
+  sleepTime = 1000
 ): Promise<void> {
-  await sleep(1000);
+  await sleep(sleepTime);
   const lookupTableAccount = await connection
     .getAddressLookupTable(lookupTablePubkey)
     .then((res) => res.value);

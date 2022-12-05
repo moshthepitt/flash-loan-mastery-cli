@@ -27,7 +27,7 @@ import {
   sendTransactionV0WithLookupTable,
   sleep,
 } from "./utils";
-import { MAX_INSTRUCTIONS } from "./constants";
+import { MAX_INSTRUCTIONS, SIMPLE_ARB_SLEEP_TIME } from "./constants";
 
 const COMMON_TOKEN_MINTS = new Set([
   "So11111111111111111111111111111111111111112", // wSOL
@@ -135,7 +135,7 @@ export const jupiterSimpleArb = async (
       bestBuy &&
       bestSell
     ) {
-      const { lookUpTable } = await createLookupTable(provider, wallet);
+      const { lookUpTable } = await createLookupTable(provider, wallet, true, 2000);
       const { transactions: buyTransactions } = await jupiter.exchange({
         routeInfo: bestBuy,
       });
@@ -255,6 +255,6 @@ export const jupiterSimpleArb = async (
         console.log("Transaction failed");
       }
     }
-    sleep(1000);
+    sleep(SIMPLE_ARB_SLEEP_TIME);
   }
 };

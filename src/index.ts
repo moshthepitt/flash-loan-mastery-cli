@@ -5,8 +5,10 @@ import {
   USDC_MINT,
   USDT_MINT,
   SOL_MINT,
+  MAX_DIE_RETRIES,
   confirmTransactionInitialTimeout,
   providerOptions,
+  DIE_SLEEP_TIME,
 } from "./constants";
 import { exampleFlashLoan, exampleFlashLoanWithLookupTable } from "./examples";
 import {
@@ -15,7 +17,7 @@ import {
   withdrawFromFlashLoanPool,
 } from "./flm";
 import { createCommonTokenAccounts, jupiterSimpleArb } from "./jup";
-import { loadKeypair } from "./utils";
+import { loadKeypair, sleep } from "./utils";
 
 const CONNECTION = new Connection(RPC_ENDPOINT, {
   commitment: providerOptions.commitment,
@@ -135,7 +137,7 @@ program
     );
   });
 
-  program
+program
   .command("example-flash-loan-with-lookup-table")
   .requiredOption(
     "-k, --keypair <Keypair path>",
@@ -180,13 +182,25 @@ program
   .requiredOption("-a, --amount <number>", "The amount")
   .addHelpText("beforeAll", "Perform a simple arb using Jupiter")
   .action(async ({ keypair, tokenMint1, tokenMint2, amount }) => {
-    await jupiterSimpleArb(
-      CONNECTION,
-      loadKeypair(keypair),
-      new PublicKey(tokenMint1),
-      new PublicKey(tokenMint2),
-      Number(amount)
-    );
+    let count = 0;
+    while (count < MAX_DIE_RETRIES) {
+      count += 1;
+      try {
+        await jupiterSimpleArb(
+          CONNECTION,
+          loadKeypair(keypair),
+          new PublicKey(tokenMint1),
+          new PublicKey(tokenMint2),
+          Number(amount)
+        );
+      } catch (err) {
+        console.log("retry simple-jupiter-arb");
+        if (count === MAX_DIE_RETRIES) {
+          throw err;
+        }
+        sleep(DIE_SLEEP_TIME * MAX_DIE_RETRIES);
+      }
+    }
   });
 
 program.parse();
