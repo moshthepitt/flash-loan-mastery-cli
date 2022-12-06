@@ -9,6 +9,7 @@ import {
   confirmTransactionInitialTimeout,
   providerOptions,
   DIE_SLEEP_TIME,
+  SIMPLE_ARB_DEFAULT_SLIPPAGE_BPS,
 } from "./constants";
 import { exampleFlashLoan, exampleFlashLoanWithLookupTable } from "./examples";
 import {
@@ -180,8 +181,9 @@ program
   .requiredOption("-m1, --token-mint1 <PublicKey>")
   .requiredOption("-m2, --token-mint2 <PublicKey>")
   .requiredOption("-a, --amount <number>", "The amount")
+  .option("-s, --slippageBps <number>", "The max slippage Bps")
   .addHelpText("beforeAll", "Perform a simple arb using Jupiter")
-  .action(async ({ keypair, tokenMint1, tokenMint2, amount }) => {
+  .action(async ({ keypair, tokenMint1, tokenMint2, amount, slippageBps }) => {
     let count = 0;
     while (count < MAX_DIE_RETRIES) {
       count += 1;
@@ -191,7 +193,10 @@ program
           loadKeypair(keypair),
           new PublicKey(tokenMint1),
           new PublicKey(tokenMint2),
-          Number(amount)
+          Number(amount),
+          slippageBps == null
+            ? SIMPLE_ARB_DEFAULT_SLIPPAGE_BPS
+            : Number(slippageBps)
         );
       } catch (err) {
         console.log("retry simple-jupiter-arb");

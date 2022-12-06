@@ -27,7 +27,11 @@ import {
   sendTransactionV0WithLookupTable,
   sleep,
 } from "./utils";
-import { MAX_INSTRUCTIONS, SIMPLE_ARB_SLEEP_TIME } from "./constants";
+import {
+  MAX_INSTRUCTIONS,
+  SIMPLE_ARB_CREATE_ALT_SLEEP_TIME,
+  SIMPLE_ARB_SLEEP_TIME,
+} from "./constants";
 
 const COMMON_TOKEN_MINTS = new Set([
   "So11111111111111111111111111111111111111112", // wSOL
@@ -88,7 +92,8 @@ export const jupiterSimpleArb = async (
   wallet: Keypair,
   mint1: PublicKey,
   mint2: PublicKey,
-  amount: number
+  amount: number,
+  slippageBps = 1
 ) => {
   const { provider } = setUp(connection, wallet);
   const jupiter = await Jupiter.load({
@@ -116,7 +121,7 @@ export const jupiterSimpleArb = async (
       inputMint: mint1,
       outputMint: mint2,
       amount: JSBI.BigInt(initialAmount),
-      slippageBps: 1,
+      slippageBps,
       forceFetch: true,
     });
     const bestBuy = buyRoutesInfos[0];
@@ -124,7 +129,7 @@ export const jupiterSimpleArb = async (
       inputMint: mint2,
       outputMint: mint1,
       amount: bestBuy?.outAmount || JSBI.BigInt(0),
-      slippageBps: 1,
+      slippageBps,
       forceFetch: true,
     });
     const bestSell = sellRoutesInfos[0];
@@ -135,7 +140,12 @@ export const jupiterSimpleArb = async (
       bestBuy &&
       bestSell
     ) {
-      const { lookUpTable } = await createLookupTable(provider, wallet, true, 2000);
+      const { lookUpTable } = await createLookupTable(
+        provider,
+        wallet,
+        true,
+        SIMPLE_ARB_CREATE_ALT_SLEEP_TIME
+      );
       const { transactions: buyTransactions } = await jupiter.exchange({
         routeInfo: bestBuy,
       });
@@ -251,8 +261,9 @@ export const jupiterSimpleArb = async (
           ixs
         );
         console.log("Transaction signature", txId);
-      } catch {
+      } catch (err) {
         console.log("Transaction failed");
+        console.log(err);
       }
     }
     sleep(SIMPLE_ARB_SLEEP_TIME);
