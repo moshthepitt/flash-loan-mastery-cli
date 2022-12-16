@@ -11,7 +11,7 @@ import {
 import fs from "fs";
 import path from "path";
 import {
-  CACHE_NAME,
+  LOOKUP_TABLES_CACHE_NAME,
   CACHE_PATH,
   DEVNET,
   MAINNET,
@@ -19,11 +19,13 @@ import {
   MAX_IX_RETRIES,
 } from "./constants";
 
-export function cachePath(cacheName: string = CACHE_NAME): string {
+export function cachePath(
+  cacheName: string = LOOKUP_TABLES_CACHE_NAME
+): string {
   if (!fs.existsSync(CACHE_PATH)) {
     fs.mkdirSync(CACHE_PATH);
   }
-  return path.join(CACHE_PATH, `${cacheName}.json`);
+  return path.join(CACHE_PATH, cacheName);
 }
 
 export function loadCache<T>(
@@ -81,7 +83,7 @@ export const createLookupTable = async (
       }
 
       const env = RPC_ENDPOINT.includes(DEVNET) ? DEVNET : MAINNET;
-      const cacheName = `${env}-${CACHE_NAME}.json`;
+      const cacheName = `${env}-${LOOKUP_TABLES_CACHE_NAME}.json`;
       const savedLookTables = loadCache<string[]>(cacheName, []);
       savedLookTables.push(result[1].toBase58());
       saveCache(cacheName, savedLookTables);

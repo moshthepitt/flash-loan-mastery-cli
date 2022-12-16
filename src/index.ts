@@ -17,6 +17,7 @@ import {
   initFlashLoanPool,
   withdrawFromFlashLoanPool,
 } from "./flm";
+import { extractJupAccountKeys } from "./janitor";
 import { createCommonTokenAccounts, jupiterSimpleArb } from "./jup";
 import { loadKeypair, sleep } from "./utils";
 
@@ -206,6 +207,14 @@ program
         sleep(DIE_SLEEP_TIME * MAX_DIE_RETRIES);
       }
     }
+  });
+
+  program
+  .command("get-keys-from-lookup-tables")
+  .requiredOption("-c, --cache-file <keypair>")
+  .addHelpText("beforeAll", "TODO")
+  .action(async ({ cacheFile }) => {
+    extractJupAccountKeys(CONNECTION, cacheFile);
   });
 
 program.parse();
