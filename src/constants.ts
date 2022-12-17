@@ -34,6 +34,7 @@ export const SIMPLE_ARB_SLEEP_TIME = 500;
 export const SIMPLE_ARB_DEFAULT_SLIPPAGE_BPS = 2;
 export const DIE_SLEEP_TIME = 2500;
 export const MAX_ACCOUNTS_TO_FETCH = 99;
+export const MAX_ACCOUNTS_TO_PROCESS = 10;
 export const CACHE_PATH = process.env.FLM_CACHE_PATH || '.cache';
 export const LOOKUP_TABLES_CACHE_NAME = 'lookup_tables';
 export const DEVNET = 'devnet';

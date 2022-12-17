@@ -17,7 +17,11 @@ import {
   initFlashLoanPool,
   withdrawFromFlashLoanPool,
 } from "./flm";
-import { extractJupAccountKeys } from "./janitor";
+import {
+  closeLookupTables,
+  deactivateLookupTables,
+  extractJupAccountKeys,
+} from "./janitor";
 import { createCommonTokenAccounts, jupiterSimpleArb } from "./jup";
 import { loadKeypair, sleep } from "./utils";
 
@@ -209,12 +213,22 @@ program
     }
   });
 
-  program
-  .command("get-keys-from-lookup-tables")
+program
+  .command("deactivate-lookup-tables")
+  .requiredOption("-k, --keypair <keypair>")
   .requiredOption("-c, --cache-file <keypair>")
   .addHelpText("beforeAll", "TODO")
-  .action(async ({ cacheFile }) => {
-    extractJupAccountKeys(CONNECTION, cacheFile);
+  .action(async ({ keypair, cacheFile }) => {
+    deactivateLookupTables(CONNECTION, loadKeypair(keypair), cacheFile);
+  });
+
+program
+  .command("close-lookup-tables")
+  .requiredOption("-k, --keypair <keypair>")
+  .requiredOption("-c, --cache-file <keypair>")
+  .addHelpText("beforeAll", "TODO")
+  .action(async ({ keypair, cacheFile }) => {
+    closeLookupTables(CONNECTION, loadKeypair(keypair), cacheFile);
   });
 
 program.parse();
