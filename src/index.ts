@@ -24,6 +24,11 @@ import {
 } from "./janitor";
 import { createCommonTokenAccounts, jupiterSimpleArb } from "./jup";
 import { loadKeypair, sleep } from "./utils";
+import {
+  seedJupArbAccountKeys,
+  createAddressLookupTableFromCache,
+  jupiterSimpleArbWithCache,
+} from "./premium";
 
 const CONNECTION = new Connection(RPC_ENDPOINT, {
   commitment: providerOptions.commitment,
@@ -217,6 +222,13 @@ program
   .command("deactivate-lookup-tables")
   .requiredOption("-k, --keypair <keypair>")
   .requiredOption("-c, --cache-file <keypair>")
+  .option("-a, --amount <number>", "The amount")
+  .option("-r, --seedRounds <number>", "The number of rounds")
+  .option(
+    "-l, --sleepTime <number>",
+    "The amount of time to sleep between rounds"
+  )
+  .option("-s, --slippageBps <number>", "The max slippage Bps")
   .addHelpText("beforeAll", "TODO")
   .action(async ({ keypair, cacheFile }) => {
     deactivateLookupTables(CONNECTION, loadKeypair(keypair), cacheFile);
@@ -229,6 +241,123 @@ program
   .addHelpText("beforeAll", "TODO")
   .action(async ({ keypair, cacheFile }) => {
     closeLookupTables(CONNECTION, loadKeypair(keypair), cacheFile);
+  });
+
+program
+  .command("seed-jupiter-arb-keys")
+  .requiredOption("-k, --keypair <keypair>")
+  .requiredOption("-m1, --token-mint1 <PublicKey>")
+  .requiredOption("-m2, --token-mint2 <PublicKey>")
+  .option("-a, --amount <number>", "The amount")
+  .option("-r, --seedRounds <number>", "The number of rounds")
+  .option(
+    "-l, --sleepTime <number>",
+    "The amount of time to sleep between rounds"
+  )
+  .option("-s, --slippageBps <number>", "The max slippage Bps")
+  .option("-t, --takeRoutes <number>", "The number of routes to sample")
+  .addHelpText("beforeAll", "Create a cache of accounts used for Jupiter arbs")
+  .action(
+    async ({
+      keypair,
+      tokenMint1,
+      tokenMint2,
+      amount,
+      seedRounds,
+      sleepTime,
+      slippageBps,
+      takeRoutes,
+    }) => {
+      let count = 0;
+      while (count < MAX_DIE_RETRIES) {
+        count += 1;
+        try {
+          await seedJupArbAccountKeys(
+            CONNECTION,
+            loadKeypair(keypair),
+            new PublicKey(tokenMint1),
+            new PublicKey(tokenMint2),
+            seedRounds == null ? undefined : Number(seedRounds),
+            sleepTime == null ? undefined : Number(sleepTime),
+            amount == null ? undefined : Number(amount),
+            slippageBps == null ? undefined : Number(slippageBps),
+            takeRoutes == null ? undefined : Number(takeRoutes)
+          );
+          break;
+        } catch (err) {
+          console.log("retry seed-jupiter-arb-keys");
+          if (count === MAX_DIE_RETRIES) {
+            throw err;
+          }
+          sleep(DIE_SLEEP_TIME * MAX_DIE_RETRIES);
+        }
+      }
+    }
+  );
+
+program
+  .command("create-lookup-table-from-cache")
+  .requiredOption("-k, --keypair <keypair>")
+  .requiredOption("-m1, --token-mint1 <PublicKey>")
+  .requiredOption("-m2, --token-mint2 <PublicKey>")
+  .addHelpText(
+    "beforeAll",
+    "Create an address lookup table from a cache of accounts used for Jupiter arbs"
+  )
+  .action(async ({ keypair, tokenMint1, tokenMint2 }) => {
+    let count = 0;
+    while (count < MAX_DIE_RETRIES) {
+      count += 1;
+      try {
+        await createAddressLookupTableFromCache(
+          CONNECTION,
+          loadKeypair(keypair),
+          new PublicKey(tokenMint1),
+          new PublicKey(tokenMint2)
+        );
+        break;
+      } catch (err) {
+        console.log("retry create-lookup-table-from-cache");
+        if (count === MAX_DIE_RETRIES) {
+          throw err;
+        }
+        sleep(DIE_SLEEP_TIME * MAX_DIE_RETRIES);
+      }
+    }
+  });
+
+  program
+  .command("cached-jupiter-arb")
+  .requiredOption("-k, --keypair <keypair>")
+  .requiredOption("-m1, --token-mint1 <PublicKey>")
+  .requiredOption("-m2, --token-mint2 <PublicKey>")
+  .requiredOption("-a, --amount <number>", "The amount")
+  .option("-s, --slippageBps <number>", "The max slippage Bps")
+  .addHelpText("beforeAll", "Perform a simple cached arb using Jupiter")
+  .action(async ({ keypair, tokenMint1, tokenMint2, amount, slippageBps }) => {
+    let count = 0;
+    while (count < MAX_DIE_RETRIES) {
+      count += 1;
+      try {
+        await jupiterSimpleArbWithCache(
+          CONNECTION,
+          loadKeypair(keypair),
+          new PublicKey(tokenMint1),
+          new PublicKey(tokenMint2),
+          Number(amount),
+          slippageBps == null
+            ? SIMPLE_ARB_DEFAULT_SLIPPAGE_BPS
+            : Number(slippageBps)
+        );
+        console.log('7777777777777777');
+      } catch (err) {
+        console.log("retry cached-jupiter-arb");
+        if (count === MAX_DIE_RETRIES) {
+          throw err;
+        }
+        sleep(DIE_SLEEP_TIME * MAX_DIE_RETRIES);
+      }
+    }
   });
 
 program.parse();
