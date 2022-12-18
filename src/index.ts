@@ -349,7 +349,6 @@ program
             ? SIMPLE_ARB_DEFAULT_SLIPPAGE_BPS
             : Number(slippageBps)
         );
-        console.log('7777777777777777');
       } catch (err) {
         console.log("retry cached-jupiter-arb");
         if (count === MAX_DIE_RETRIES) {
