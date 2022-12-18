@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
     "start": "tsc && node dist/index.js"
   },
   "author": "moshthepitt",
