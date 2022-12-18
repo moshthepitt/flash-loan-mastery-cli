@@ -19,6 +19,11 @@ import {
   MAX_IX_RETRIES,
 } from "./constants";
 
+export const getLookupTableCacheName = () => {
+  const env = RPC_ENDPOINT.includes(DEVNET) ? DEVNET : MAINNET;
+  return `${env}-${LOOKUP_TABLES_CACHE_NAME}.json`;
+};
+
 export function cachePath(
   cacheName: string = LOOKUP_TABLES_CACHE_NAME
 ): string {
@@ -82,8 +87,7 @@ export const createLookupTable = async (
         await printAddressLookupTable(provider.connection, result[1]);
       }
 
-      const env = RPC_ENDPOINT.includes(DEVNET) ? DEVNET : MAINNET;
-      const cacheName = `${env}-${LOOKUP_TABLES_CACHE_NAME}.json`;
+      const cacheName = getLookupTableCacheName();
       const savedLookTables = loadCache<string[]>(cacheName, []);
       savedLookTables.push(result[1].toBase58());
       saveCache(cacheName, savedLookTables);
@@ -128,7 +132,7 @@ export const addKeysToLookupTable = async (
       }
       return txId;
     } catch (err) {
-      console.log("retry add keys to address lookup table");
+      console.log("retry add keys to address lookup table", err);
       if (count === maxRetries) {
         throw err;
       }
