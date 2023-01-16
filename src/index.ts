@@ -222,13 +222,6 @@ program
   .command("deactivate-lookup-tables")
   .requiredOption("-k, --keypair <keypair>")
   .requiredOption("-c, --cache-file <keypair>")
-  .option("-a, --amount <number>", "The amount")
-  .option("-r, --seedRounds <number>", "The number of rounds")
-  .option(
-    "-l, --sleepTime <number>",
-    "The amount of time to sleep between rounds"
-  )
-  .option("-s, --slippageBps <number>", "The max slippage Bps")
   .addHelpText("beforeAll", "TODO")
   .action(async ({ keypair, cacheFile }) => {
     deactivateLookupTables(CONNECTION, loadKeypair(keypair), cacheFile);
