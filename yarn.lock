@@ -16,6 +16,11 @@
   dependencies:
     regenerator-runtime "^0.13.4"
 
+"@bitauth/libauth@^1.17.1":
+  version "1.19.1"
+  resolved "https://registry.yarnpkg.com/@bitauth/libauth/-/libauth-1.19.1.tgz#713751bbc09815b667f8fe00a1cc5b0f3bf45dd1"
+  integrity sha512-R524tD5VwOt3QRHr7N518nqTVR/HKgfWL4LypekcGuNQN8R4PWScvuRcRzrY39A28kLztMv+TJdiKuMNbkU1ug==
+
 "@blockworks-foundation/mango-client@^3.4.7":
   version "3.6.20"
   resolved "https://registry.yarnpkg.com/@blockworks-foundation/mango-client/-/mango-client-3.6.20.tgz#66ed0ae4545959fdc31ca1918de0f931de579d41"
@@ -1552,9 +1557,14 @@ find@^0.3.0:
   dependencies:
     traverse-chain "~0.1.0"
 
-"flash-loan-mastery@link:../flash-loan-mastery":
-  version "0.0.0"
-  uid ""
+flash-loan-mastery@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/flash-loan-mastery/-/flash-loan-mastery-1.0.0.tgz#85f1234b19cbffacf52a19ed719dc820cb3e9443"
+  integrity sha512-FiOyj1tXg85F7nRQF9h9LLVDx8jrmESSKH061K/Fsnj1JddUgBticjsT9/muaOjOcOTf0F7qRItqAdy6r5fSvA==
+  dependencies:
+    "@bitauth/libauth" "^1.17.1"
+    "@project-serum/anchor" "^0.25.0"
+    "@solana/spl-token" "^0.2"
 
 follow-redirects@^1.14.0, follow-redirects@^1.14.7:
   version "1.15.1"
