@@ -1,4 +1,9 @@
 import { AnchorProvider, BN, web3, Wallet } from "@project-serum/anchor";
+import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import {
+  createAssociatedTokenAccountInstruction,
+  getMint,
+} from "@solana/spl-token/";
 import {
   deposit,
   initPool,
@@ -8,11 +13,6 @@ import {
   getTokenAccount,
   withdraw,
 } from "flash-loan-mastery";
-import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
-import {
-  createAssociatedTokenAccountInstruction,
-  getMint,
-} from "@solana/spl-token-v2";
 import { FLM_PROGRAM_ID, providerOptions } from "./constants";
 
 export const setUp = (connection: web3.Connection, wallet: Keypair) => {

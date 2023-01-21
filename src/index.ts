@@ -17,11 +17,7 @@ import {
   initFlashLoanPool,
   withdrawFromFlashLoanPool,
 } from "./flm";
-import {
-  closeLookupTables,
-  deactivateLookupTables,
-  extractJupAccountKeys,
-} from "./janitor";
+import { closeLookupTables, deactivateLookupTables } from "./janitor";
 import { createCommonTokenAccounts, jupiterSimpleArb } from "./jup";
 import { loadKeypair, sleep } from "./utils";
 import {
@@ -319,7 +315,7 @@ program
     }
   });
 
-  program
+program
   .command("cached-jupiter-arb")
   .requiredOption("-k, --keypair <keypair>")
   .requiredOption("-m1, --token-mint1 <PublicKey>")

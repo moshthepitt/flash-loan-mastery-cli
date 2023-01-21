@@ -12,7 +12,7 @@ import { Jupiter } from "@jup-ag/core";
 import {
   createAssociatedTokenAccountInstruction,
   getMint,
-} from "@solana/spl-token-v2";
+} from "@solana/spl-token/";
 import {
   getTokenAccount,
   getAssociatedTokenAddressSync,
