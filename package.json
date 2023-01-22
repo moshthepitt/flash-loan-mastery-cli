@@ -1,16 +1,17 @@
 {
   "name": "flash-loan-mastery-cli",
-  "version": "1.1.0",
-  "main": "index.js",
+  "version": "1.2.0",
+  "main": "build/main/index.js",
+  "typings": "build/main/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "build:prod": "tsc -p tsconfig.prod.json",
+    "reset-hard": "git clean -dfx && git reset --hard && yarn",
     "start": "tsc && node dist/index.js"
   },
   "author": "moshthepitt",
   "license": "MIT",
   "dependencies": {
-    "@jup-ag/core": "^4.0.0-beta.6",
-    "@project-serum/anchor": "^0.26.0",
     "@solana/spl-token": "^0.3.7",
     "commander": "^10.0.0",
     "dotenv": "^16.0.3",
@@ -21,5 +22,14 @@
   "devDependencies": {
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/node": "^18.11.18"
-  }
+  },
+  "files": [
+    "!dist",
+    "build/main",
+    "!**/*.spec.*",
+    "!**/*.json",
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md"
+  ]
 }
