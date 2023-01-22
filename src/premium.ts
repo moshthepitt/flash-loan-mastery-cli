@@ -10,7 +10,7 @@ import {
   TransactionInstruction,
 } from "@solana/web3.js";
 import { Jupiter, RouteInfo } from "@jup-ag/core";
-import { getMint } from "@solana/spl-token/";
+import { getMint } from "@solana/spl-token";
 import { setUp, getFlashLoanInstructions } from "./flm";
 import {
   addKeysToLookupTable,

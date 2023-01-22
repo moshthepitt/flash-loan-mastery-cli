@@ -3,7 +3,7 @@ import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import {
   createAssociatedTokenAccountInstruction,
   getMint,
-} from "@solana/spl-token/";
+} from "@solana/spl-token";
 import {
   deposit,
   initPool,
