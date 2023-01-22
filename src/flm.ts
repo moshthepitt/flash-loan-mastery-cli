@@ -1,5 +1,5 @@
-import { AnchorProvider, BN, web3, Wallet } from "@project-serum/anchor";
-import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import { AnchorProvider, BN, Program, Wallet } from "@project-serum/anchor";
+import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 import {
   createAssociatedTokenAccountInstruction,
   getMint,
@@ -8,6 +8,7 @@ import {
   deposit,
   initPool,
   flashLoan,
+  FlashLoanMastery,
   getAssociatedTokenAddressSync,
   getProgram,
   getTokenAccount,
@@ -15,7 +16,10 @@ import {
 } from "flash-loan-mastery";
 import { FLM_PROGRAM_ID, providerOptions } from "./constants";
 
-export const setUp = (connection: web3.Connection, wallet: Keypair) => {
+export const setUp = (connection: Connection, wallet: Keypair): {
+  program: Program<FlashLoanMastery>;
+  provider: AnchorProvider;
+} => {
   const provider = new AnchorProvider(connection, new Wallet(wallet), {
     ...AnchorProvider.defaultOptions(),
     commitment: providerOptions.commitment,
@@ -26,7 +30,7 @@ export const setUp = (connection: web3.Connection, wallet: Keypair) => {
 };
 
 export const initFlashLoanPool = async (
-  connection: web3.Connection,
+  connection: Connection,
   wallet: Keypair,
   tokenMint: PublicKey,
   poolMint: PublicKey
@@ -55,7 +59,7 @@ export const initFlashLoanPool = async (
 };
 
 export const depositIntoFlashLoanPool = async (
-  connection: web3.Connection,
+  connection: Connection,
   wallet: Keypair,
   mint: PublicKey,
   tokenFrom: PublicKey,
@@ -88,7 +92,7 @@ export const depositIntoFlashLoanPool = async (
 };
 
 export const withdrawFromFlashLoanPool = async (
-  connection: web3.Connection,
+  connection: Connection,
   wallet: Keypair,
   mint: PublicKey,
   poolShareTokenFrom: PublicKey,
@@ -120,21 +124,21 @@ export const withdrawFromFlashLoanPool = async (
 };
 
 export const getFlashLoanInstructions = async (
-  connection: web3.Connection,
+  connection: Connection,
   wallet: Keypair,
   mint: PublicKey,
   amount: number,
   referralWallet?: PublicKey
 ): Promise<{
-  setUpInstruction: web3.TransactionInstruction | undefined;
-  borrow: web3.TransactionInstruction;
-  repay: web3.TransactionInstruction;
+  setUpInstruction: TransactionInstruction | undefined;
+  borrow: TransactionInstruction;
+  repay: TransactionInstruction;
   repaymentAmount: BN;
 }> => {
   const { program } = setUp(connection, wallet);
   const mintAccount = await getMint(connection, mint);
 
-  let setUpIx: web3.TransactionInstruction | undefined = undefined;
+  let setUpIx: TransactionInstruction | undefined = undefined;
   if (referralWallet) {
     const possibleReferralTokenAccount = await getTokenAccount(
       connection,

@@ -39,6 +39,7 @@ export const createCommonTokenAccounts = async (
         mintKey
       );
     }
+    return;
   });
   const instructions = await (
     await Promise.all(instructionPromises)

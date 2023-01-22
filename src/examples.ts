@@ -1,32 +1,17 @@
-import { web3 } from "@project-serum/anchor";
-import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { setUp, getFlashLoanInstructions } from "./flm";
 import {
-  addKeysToLookupTable,
-  chunkArray,
-  createLookupTable,
   getLookupTableCacheName,
   loadCache,
-  removeDuplicateKeys,
   saveCache,
   sendTransactionV0WithLookupTable,
-  sleep,
 } from "./utils";
 import {
   createAddressLookupTableFromCache,
   DEFAULT_KEYS_CACHE,
-  loadAddressLookupTable,
   LookupTableKeysCache,
 } from "./lookup_tables";
-import {
-  MAX_INSTRUCTIONS,
-  CREATE_ALT_SLEEP_TIME,
-  DEVNET,
-  MAINNET,
-  RPC_ENDPOINT,
-  SIMPLE_ARB_DEFAULT_SLIPPAGE_BPS,
-  SLEEP_TIME,
-} from "./constants";
+import { DEVNET, MAINNET, RPC_ENDPOINT } from "./constants";
 
 const getExampleFlashLoanCacheName = (mint: PublicKey) => {
   const env = RPC_ENDPOINT.includes(DEVNET) ? DEVNET : MAINNET;
@@ -34,7 +19,7 @@ const getExampleFlashLoanCacheName = (mint: PublicKey) => {
 };
 
 export const exampleFlashLoan = async (
-  connection: web3.Connection,
+  connection: Connection,
   wallet: Keypair,
   mint: PublicKey,
   amount: number,
@@ -60,7 +45,7 @@ export const exampleFlashLoan = async (
 };
 
 export const seedExampleFlashLoanKeys = async (
-  connection: web3.Connection,
+  connection: Connection,
   wallet: Keypair,
   mint: PublicKey,
   amount: number,
@@ -113,7 +98,7 @@ export const seedExampleFlashLoanKeys = async (
 };
 
 export const createExampleFlashLoanAddressLookupTableFromCache = (
-  connection: web3.Connection,
+  connection: Connection,
   wallet: Keypair,
   mint: PublicKey
 ) => {
@@ -132,14 +117,17 @@ export const createExampleFlashLoanAddressLookupTableFromCache = (
 };
 
 export const exampleFlashLoanWithLookupTable = async (
-  connection: web3.Connection,
+  connection: Connection,
   wallet: Keypair,
   mint: PublicKey,
   amount: number,
   referralWallet?: PublicKey
 ) => {
   const keysCacheName = getExampleFlashLoanCacheName(mint);
-  const cachedKeys = loadCache<LookupTableKeysCache>(keysCacheName, DEFAULT_KEYS_CACHE);
+  const cachedKeys = loadCache<LookupTableKeysCache>(
+    keysCacheName,
+    DEFAULT_KEYS_CACHE
+  );
   if (!cachedKeys || !cachedKeys.addressLookupTable) {
     throw new Error("Address lookup table is missing");
   }
