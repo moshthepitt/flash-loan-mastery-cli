@@ -10,6 +10,9 @@ You can use this package by cloning it locally and installing its dependencies u
 
 ```sh
 git clone https://github.com/moshthepitt/flash-loan-mastery-cli.git
+```
+
+```sh
 yarn
 ```
 
