@@ -20,6 +20,9 @@ export const USDT_MINT = new PublicKey(
 export const SOL_MINT = new PublicKey(
   "So11111111111111111111111111111111111111112"
 );
+export const DEFAULT_REFERRER = new PublicKey(
+  "8JJxe21mwJezmU5y9NxTWUxc9stkEkwcP1deRzL2Kc7s"
+);
 
 export const confirmTransactionInitialTimeout =
   60 *
