@@ -1,6 +1,6 @@
 {
   "name": "flash-loan-mastery-cli",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
@@ -9,46 +9,16 @@
   "author": "moshthepitt",
   "license": "MIT",
   "dependencies": {
-    "@jup-ag/core": "3.0.0-beta.9",
-    "@project-serum/anchor": "^0.25.0",
-    "@solana/buffer-layout": "^4.0.1",
+    "@project-serum/anchor": "^0.26.0",
     "@solana/spl-token": "^0.3.7",
-    "@solana/web3.js": "^1.73.0",
-    "commander": "^9.1.0",
-    "dotenv": "^16.0.0",
+    "commander": "^10.0.0",
+    "dotenv": "^16.0.3",
     "flash-loan-mastery": "^1.0.5",
-    "got-cjs": "^12.5.4",
     "isomorphic-fetch": "^3.0.0",
-    "jsbi": "^4.3.0",
-    "typescript": "^4.6.2"
-  },
-  "resolutions": {
-    "@solana/buffer-layout": "4.0.0",
-    "@project-serum/anchor": "0.25.0",
-    "@solana/spl-token": "0.3.7",
-    "@solana/web3.js": "1.73.0",
-    "commander": "2.20.3",
-    "dotenv": "16.0.3",
-    "@types/node": "12.20.55",
-    "@saberhq/stableswap-sdk": "1.13.6",
-    "bn.js": "5.2.1",
-    "cross-fetch": "3.1.5",
-    "decimal.js": "10.3.1",
-    "retry": "0.12.0",
-    "tiny-invariant": "1.3.1",
-    "buffer": "6.0.3",
-    "big.js": "5.2.2",
-    "get-stream": "6.0.1",
-    "@solana/spl-token-registry": "0.2.4574",
-    "node-fetch": "2.6.7",
-    "borsh": "0.7.0",
-    "superstruct": "0.14.2",
-    "ws": "7.5.9",
-    "@saberhq/token-utils": "1.13.32",
-    "mimic-response": "3.1.0"
+    "typescript": "^4.9.4"
   },
   "devDependencies": {
     "@types/isomorphic-fetch": "^0.0.36",
-    "@types/node": "^18.11.10"
+    "@types/node": "^18.11.18"
   }
 }
