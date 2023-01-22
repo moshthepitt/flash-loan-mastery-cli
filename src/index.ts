@@ -11,14 +11,19 @@ import {
   DIE_SLEEP_TIME,
   SIMPLE_ARB_DEFAULT_SLIPPAGE_BPS,
 } from "./constants";
-import { exampleFlashLoan, exampleFlashLoanWithLookupTable } from "./examples";
+import {
+  createExampleFlashLoanAddressLookupTableFromCache,
+  exampleFlashLoan,
+  exampleFlashLoanWithLookupTable,
+  seedExampleFlashLoanKeys,
+} from "./examples";
 import {
   depositIntoFlashLoanPool,
   initFlashLoanPool,
   withdrawFromFlashLoanPool,
 } from "./flm";
 import { closeLookupTables, deactivateLookupTables } from "./janitor";
-// import { createCommonTokenAccounts, jupiterSimpleArb } from "./jup";
+import { createCommonTokenAccounts } from "./token-utils";
 import { loadKeypair, sleep } from "./utils";
 // import {
 //   seedJupArbAccountKeys,
@@ -32,6 +37,17 @@ const CONNECTION = new Connection(RPC_ENDPOINT, {
 });
 
 const program = new Command();
+
+program
+  .command("create-token-accounts")
+  .requiredOption("-k, --keypair <keypair>")
+  .addHelpText(
+    "beforeAll",
+    "Create common token accounts based to reduce setup when running other commands"
+  )
+  .action(async ({ keypair }) => {
+    await createCommonTokenAccounts(CONNECTION, loadKeypair(keypair));
+  });
 
 program
   .command("init-pool")
@@ -145,7 +161,69 @@ program
   });
 
 program
-  .command("example-flash-loan-with-lookup-table")
+  .command("seed-example-flash-loan-lookup-table")
+  .requiredOption("-k, --keypair <keypair>")
+  .requiredOption("-tm, --token-mint <PublicKey>")
+  .requiredOption("-a, --amount <number>", "The amount")
+  .addHelpText(
+    "beforeAll",
+    "Create a cache of accounts used for example flash loan transactions"
+  )
+  .action(async ({ keypair, tokenMint, amount }) => {
+    let count = 0;
+    while (count < MAX_DIE_RETRIES) {
+      count += 1;
+      try {
+        await seedExampleFlashLoanKeys(
+          CONNECTION,
+          loadKeypair(keypair),
+          new PublicKey(tokenMint),
+          Number(amount)
+        );
+        break;
+      } catch (err) {
+        console.log("retry seed-example-flash-loan-lookup-table");
+        if (count === MAX_DIE_RETRIES) {
+          throw err;
+        }
+        sleep(DIE_SLEEP_TIME * MAX_DIE_RETRIES);
+      }
+    }
+  });
+
+program
+  .command("create-versioned-flash-loan-lookup-table-from-cache")
+  .requiredOption("-k, --keypair <keypair>")
+  .requiredOption("-tm, --token-mint <PublicKey>")
+  .addHelpText(
+    "beforeAll",
+    "Create an address lookup table from a cache of accounts used for example flash loans"
+  )
+  .action(async ({ keypair, tokenMint }) => {
+    let count = 0;
+    while (count < MAX_DIE_RETRIES) {
+      count += 1;
+      try {
+        await createExampleFlashLoanAddressLookupTableFromCache(
+          CONNECTION,
+          loadKeypair(keypair),
+          new PublicKey(tokenMint)
+        );
+        break;
+      } catch (err) {
+        console.log(
+          "retry create-versioned-flash-loan-lookup-table-from-cache"
+        );
+        if (count === MAX_DIE_RETRIES) {
+          throw err;
+        }
+        sleep(DIE_SLEEP_TIME * MAX_DIE_RETRIES);
+      }
+    }
+  });
+
+program
+  .command("example-versioned-flash-loan")
   .requiredOption(
     "-k, --keypair <Keypair path>",
     "File path to wallet that executes the transaction"
@@ -158,7 +236,7 @@ program
   .option("-r, --referral-wallet <PublicKey>", "Referral wallet")
   .addHelpText(
     "beforeAll",
-    "Execute an example of a flash loan instruction using Solana v0 transactions - borrow and immediately repay"
+    "Execute an example of a flash loan instruction using Solana v0 versioned transactions - borrow and immediately repay"
   )
   .action(async ({ keypair, tokenMint, amount, referralWallet }) => {
     await exampleFlashLoanWithLookupTable(
@@ -169,17 +247,6 @@ program
       referralWallet ? new PublicKey(referralWallet) : undefined
     );
   });
-
-// program
-//   .command("create-token-accounts")
-//   .requiredOption("-k, --keypair <keypair>")
-//   .addHelpText(
-//     "beforeAll",
-//     "Create common token accounts based to reduce setup when trading or to setup platform fee accounts"
-//   )
-//   .action(async ({ keypair }) => {
-//     await createCommonTokenAccounts(CONNECTION, loadKeypair(keypair));
-//   });
 
 // program
 //   .command("simple-jupiter-arb")

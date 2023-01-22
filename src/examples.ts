@@ -3,9 +3,35 @@ import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { setUp, getFlashLoanInstructions } from "./flm";
 import {
   addKeysToLookupTable,
+  chunkArray,
   createLookupTable,
+  getLookupTableCacheName,
+  loadCache,
+  removeDuplicateKeys,
+  saveCache,
   sendTransactionV0WithLookupTable,
+  sleep,
 } from "./utils";
+import {
+  createAddressLookupTableFromCache,
+  DEFAULT_KEYS_CACHE,
+  loadAddressLookupTable,
+  LookupTableKeysCache,
+} from "./lookup_tables";
+import {
+  MAX_INSTRUCTIONS,
+  CREATE_ALT_SLEEP_TIME,
+  DEVNET,
+  MAINNET,
+  RPC_ENDPOINT,
+  SIMPLE_ARB_DEFAULT_SLIPPAGE_BPS,
+  SLEEP_TIME,
+} from "./constants";
+
+const getExampleFlashLoanCacheName = (mint: PublicKey) => {
+  const env = RPC_ENDPOINT.includes(DEVNET) ? DEVNET : MAINNET;
+  return `${env}-exampleFLMCache-${mint.toBase58()}.json`;
+};
 
 export const exampleFlashLoan = async (
   connection: web3.Connection,
@@ -33,15 +59,13 @@ export const exampleFlashLoan = async (
   console.log("Transaction signature", txId);
 };
 
-export const exampleFlashLoanWithLookupTable = async (
+export const seedExampleFlashLoanKeys = async (
   connection: web3.Connection,
   wallet: Keypair,
   mint: PublicKey,
   amount: number,
   referralWallet?: PublicKey
 ) => {
-  const { provider } = setUp(connection, wallet);
-  const { lookUpTable } = await createLookupTable(provider, wallet);
   const result = await getFlashLoanInstructions(
     connection,
     wallet,
@@ -57,9 +81,82 @@ export const exampleFlashLoanWithLookupTable = async (
     ixs.unshift(result.setUpInstruction);
   }
 
-  const keys = keyMetas.map((it) => it.pubkey);
-  await addKeysToLookupTable(provider, wallet, lookUpTable, keys);
+  const results: LookupTableKeysCache = DEFAULT_KEYS_CACHE;
+  for (let index = 0; index < keyMetas.length; index++) {
+    const keyMeta = keyMetas[index];
+    if (keyMeta) {
+      const keyStr = keyMeta.pubkey.toBase58();
+      if (results.keys[keyStr] == null) {
+        results.keys[keyStr] = 1;
+      } else {
+        results.keys[keyStr] += 1;
+      }
+    }
+  }
 
+  const keysCacheName = getExampleFlashLoanCacheName(mint);
+  const cachedKeyResults = loadCache<LookupTableKeysCache>(
+    keysCacheName,
+    DEFAULT_KEYS_CACHE
+  );
+  if (cachedKeyResults && cachedKeyResults.addressLookupTable) {
+    const lookupTableCacheName = getLookupTableCacheName();
+    const savedLookTables = loadCache<string[]>(lookupTableCacheName, []);
+    if (!savedLookTables.includes(cachedKeyResults.addressLookupTable)) {
+      savedLookTables.push(cachedKeyResults.addressLookupTable);
+      saveCache(lookupTableCacheName, savedLookTables);
+    }
+  }
+
+  saveCache(keysCacheName, results);
+  console.log(`Done. Results saved to ${keysCacheName}`);
+};
+
+export const createExampleFlashLoanAddressLookupTableFromCache = (
+  connection: web3.Connection,
+  wallet: Keypair,
+  mint: PublicKey
+) => {
+  const keysCacheName = getExampleFlashLoanCacheName(mint);
+  const cachedKeyResults = loadCache<LookupTableKeysCache>(
+    keysCacheName,
+    DEFAULT_KEYS_CACHE
+  );
+
+  createAddressLookupTableFromCache(
+    connection,
+    wallet,
+    keysCacheName,
+    cachedKeyResults
+  );
+};
+
+export const exampleFlashLoanWithLookupTable = async (
+  connection: web3.Connection,
+  wallet: Keypair,
+  mint: PublicKey,
+  amount: number,
+  referralWallet?: PublicKey
+) => {
+  const keysCacheName = getExampleFlashLoanCacheName(mint);
+  const cachedKeys = loadCache<LookupTableKeysCache>(keysCacheName, DEFAULT_KEYS_CACHE);
+  if (!cachedKeys || !cachedKeys.addressLookupTable) {
+    throw new Error("Address lookup table is missing");
+  }
+  const lookUpTable = new PublicKey(cachedKeys.addressLookupTable);
+  const { provider } = setUp(connection, wallet);
+  const result = await getFlashLoanInstructions(
+    connection,
+    wallet,
+    mint,
+    amount,
+    referralWallet
+  );
+
+  const ixs = [result.borrow, result.repay];
+  if (result.setUpInstruction) {
+    ixs.unshift(result.setUpInstruction);
+  }
   const txId = await sendTransactionV0WithLookupTable(
     provider,
     wallet,
