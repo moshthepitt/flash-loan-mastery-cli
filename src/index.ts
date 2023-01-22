@@ -22,7 +22,7 @@ import {
   initFlashLoanPool,
   withdrawFromFlashLoanPool,
 } from "./flm";
-import { closeLookupTables, deactivateLookupTables } from "./janitor";
+import { closeLookupTables, deactivateLookupTables } from "./lookup_tables";
 import { createCommonTokenAccounts } from "./token-utils";
 import { loadKeypair, sleep } from "./utils";
 // import {
