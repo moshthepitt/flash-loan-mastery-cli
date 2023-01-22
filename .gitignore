@@ -2,6 +2,7 @@
 node_modules
 .parcel-cache
 dist
+build
 *.tsbuildinfo
 yarn-error.log
 .cache/
