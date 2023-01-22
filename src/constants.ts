@@ -1,14 +1,16 @@
 import { PublicKey, Commitment } from "@solana/web3.js";
 import dotenv from "dotenv";
+import { FLASH_LOAN_MASTERY_PROGRAM_ID } from "flash-loan-mastery";
 
 dotenv.config();
 
 export const RPC_ENDPOINT =
   process.env.RPC_URI || "https://api.devnet.solana.com";
-const FLM_PROGRAM_ID_STR =
-  process.env.FLM_PROGRAM_ID || "1oanfPPN8r1i4UbugXHDxWMbWVJ5qLSN5qzNFZkz6Fg";
+const FLM_PROGRAM_ID_STR = process.env.FLM_PROGRAM_ID;
 
-export const FLM_PROGRAM_ID = new PublicKey(FLM_PROGRAM_ID_STR);
+export const FLM_PROGRAM_ID = FLM_PROGRAM_ID_STR
+  ? new PublicKey(FLM_PROGRAM_ID_STR)
+  : FLASH_LOAN_MASTERY_PROGRAM_ID;
 export const USDC_MINT = new PublicKey(
   "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 );
