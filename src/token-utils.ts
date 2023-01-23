@@ -17,25 +17,23 @@ const COMMON_TOKEN_MINTS = new Set([
   "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263", // BONK
 ]);
 
-export const createCommonTokenAccounts = async (
+export const createTokenAccounts = async (
   connection: Connection,
   wallet: Keypair,
-  mints: Set<string> = COMMON_TOKEN_MINTS
+  mints: Set<string> = COMMON_TOKEN_MINTS,
+  targetOwner: PublicKey | undefined = undefined
 ) => {
   const { provider } = setUp(connection, wallet);
+  const owner = targetOwner || wallet.publicKey;
   const instructionPromises = Array.from(mints).map(async (it) => {
     const mintKey = new PublicKey(it);
-    const ata = getAssociatedTokenAddressSync(mintKey, wallet.publicKey)[0];
-    const possibleAcc = await getTokenAccount(
-      connection,
-      wallet.publicKey,
-      mintKey
-    );
+    const ata = getAssociatedTokenAddressSync(mintKey, owner)[0];
+    const possibleAcc = await getTokenAccount(connection, owner, mintKey);
     if (possibleAcc == null) {
       return createAssociatedTokenAccountInstruction(
         wallet.publicKey,
         ata,
-        wallet.publicKey,
+        owner,
         mintKey
       );
     }

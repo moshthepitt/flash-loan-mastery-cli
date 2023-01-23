@@ -22,7 +22,7 @@ import {
   withdrawFromFlashLoanPool,
 } from "./flm";
 import { closeLookupTables, deactivateLookupTables } from "./lookup_tables";
-import { createCommonTokenAccounts } from "./token-utils";
+import { createTokenAccounts } from "./token-utils";
 import { loadKeypair, sleep } from "./utils";
 
 
@@ -41,7 +41,7 @@ program
     "Create common token accounts based to reduce setup when running other commands"
   )
   .action(async ({ keypair }) => {
-    await createCommonTokenAccounts(CONNECTION, loadKeypair(keypair));
+    await createTokenAccounts(CONNECTION, loadKeypair(keypair));
   });
 
 program
