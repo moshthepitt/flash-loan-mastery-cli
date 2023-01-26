@@ -1,5 +1,18 @@
-import { Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
-import { createAssociatedTokenAccountInstruction } from "@solana/spl-token";
+import {
+  Connection,
+  Keypair,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+} from "@solana/web3.js";
+import {
+  createAssociatedTokenAccountInstruction,
+  createCloseAccountInstruction,
+  createSyncNativeInstruction,
+  NATIVE_MINT,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 import {
   getTokenAccount,
   getAssociatedTokenAddressSync,
@@ -7,7 +20,7 @@ import {
 import { setUp } from "./flm";
 
 const COMMON_TOKEN_MINTS = new Set([
-  "So11111111111111111111111111111111111111112", // wSOL
+  NATIVE_MINT.toBase58(), // wSOL
   "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC
   "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", // USDT
   "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R", // RAY
@@ -59,4 +72,55 @@ export const createTokenAccounts = async (
   } else {
     console.log("No accounts to be created");
   }
+};
+
+export const wrapNative = async (
+  connection: Connection,
+  wallet: Keypair,
+  nativeTokenAccount: PublicKey,
+  amount: number
+) => {
+  const { provider } = setUp(connection, wallet);
+  const instructions = [
+    SystemProgram.transfer({
+      fromPubkey: wallet.publicKey,
+      toPubkey: nativeTokenAccount,
+      lamports: amount * LAMPORTS_PER_SOL,
+    }),
+    createSyncNativeInstruction(nativeTokenAccount, TOKEN_PROGRAM_ID),
+  ];
+  const tx = new Transaction().add(...instructions);
+  const txId = await provider.sendAndConfirm(tx, []);
+  console.log("Transaction signature", txId);
+};
+
+export const unwrapNative = async (
+  connection: Connection,
+  wallet: Keypair,
+  nativeTokenAccount: PublicKey,
+  keepAccountOpen = true
+) => {
+  const { provider } = setUp(connection, wallet);
+  const instructions = [
+    createCloseAccountInstruction(
+      nativeTokenAccount,
+      wallet.publicKey,
+      wallet.publicKey,
+      [],
+      TOKEN_PROGRAM_ID
+    ),
+  ];
+  if (keepAccountOpen) {
+    instructions.push(
+      createAssociatedTokenAccountInstruction(
+        wallet.publicKey,
+        nativeTokenAccount,
+        wallet.publicKey,
+        NATIVE_MINT
+      )
+    );
+  }
+  const tx = new Transaction().add(...instructions);
+  const txId = await provider.sendAndConfirm(tx, []);
+  console.log("Transaction signature", txId);
 };
