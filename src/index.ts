@@ -21,6 +21,7 @@ import {
   initFlashLoanPool,
   withdrawFromFlashLoanPool,
 } from "./flm";
+import { getPoolAccounts } from "./janitor";
 import { closeLookupTables, deactivateLookupTables } from "./lookup_tables";
 import { createTokenAccounts, unwrapNative, wrapNative } from "./token-utils";
 import { loadKeypair, sleep } from "./utils";
@@ -292,6 +293,14 @@ program
       loadKeypair(keypair),
       new PublicKey(nativeTokenAccount)
     );
+  });
+
+program
+  .command("get-pools")
+  .requiredOption("-k, --keypair <keypair>")
+  .addHelpText("beforeAll", "Get all flash loan pools")
+  .action(async ({ keypair, nativeTokenAccount }) => {
+    await getPoolAccounts(CONNECTION, loadKeypair(keypair));
   });
 
 program.parse();

@@ -1,37 +1,38 @@
-import { Connection, PublicKey } from "@solana/web3.js";
-import { saveCache } from "./utils";
-import { getAddressLookupTables } from "./lookup_tables";
+import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { setUp } from "./flm";
+import { getAssociatedTokenAddressSync } from "flash-loan-mastery";
 
-export const extractJupAccountKeys = async (
+export const getPoolAccounts = async (
   connection: Connection,
-  cacheName: string
+  wallet: Keypair
 ) => {
-  const tables = await getAddressLookupTables(connection, cacheName);
-  const keys: PublicKey[] = [];
-  for (let index = 0; index < tables.length; index++) {
-    const element = tables[index];
-    if (element) {
-      keys.push(...element.account.addresses);
+  const { program } = setUp(connection, wallet);
+  const pools = await program.account.poolAuthority.all();
+  const finalPools = pools.map((it) => {
+    const bankToken = getAssociatedTokenAddressSync(
+      it.account.mint,
+      it.publicKey
+    );
+    return {
+      poolMint: it.account.mint.toBase58(),
+      poolShareMint: it.account.poolShareMint.toBase58(),
+      poolBank: bankToken[0].toBase58(),
+      poolBankAmount: 0,
+    };
+  });
+  const tokenAccounts = await connection.getMultipleParsedAccounts(
+    finalPools.map((it) => new PublicKey(it.poolBank)),
+    { commitment: "confirmed" }
+  );
+  for (let index = 0; index < finalPools.length; index++) {
+    const thisPool = finalPools[index];
+    const thisToken = tokenAccounts.value[index];
+
+    if (thisPool && thisToken) {
+      const balance = (thisToken.data as any).parsed.info.tokenAmount
+        .uiAmount as number;
+      thisPool.poolBankAmount = balance;
     }
   }
-
-  const results: { [key: string]: number } = {};
-  for (let index = 0; index < keys.length; index++) {
-    const key = keys[index];
-    if (key) {
-      const keyStr = key.toBase58();
-      if (results[keyStr] == null) {
-        results[keyStr] = 1;
-      } else {
-        results[keyStr] += 1;
-      }
-    }
-  }
-
-  const newCacheName = cacheName.includes(".")
-    ? `${cacheName.split(".")[0]}-keys.json`
-    : `${cacheName}-keys.json`;
-
-  saveCache(newCacheName, results);
-  return results;
+  console.table(finalPools);
 };
