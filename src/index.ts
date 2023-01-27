@@ -21,10 +21,10 @@ import {
   initFlashLoanPool,
   withdrawFromFlashLoanPool,
 } from "./flm";
+import { getPoolAccounts } from "./janitor";
 import { closeLookupTables, deactivateLookupTables } from "./lookup_tables";
-import { createTokenAccounts } from "./token-utils";
+import { createTokenAccounts, unwrapNative, wrapNative } from "./token-utils";
 import { loadKeypair, sleep } from "./utils";
-
 
 const CONNECTION = new Connection(RPC_ENDPOINT, {
   commitment: providerOptions.commitment,
@@ -259,6 +259,48 @@ program
   .addHelpText("beforeAll", "TODO")
   .action(async ({ keypair, cacheFile }) => {
     closeLookupTables(CONNECTION, loadKeypair(keypair), cacheFile);
+  });
+
+program
+  .command("wrap-sol")
+  .requiredOption("-k, --keypair <keypair>")
+  .requiredOption(
+    "-n, --native-token-account <PublicKey>",
+    "The native token account address that should received the wrapped SOL"
+  )
+  .requiredOption("-a, --amount <number>", "The amount")
+  .addHelpText("beforeAll", "Send SOL to a wrapped SOL token account")
+  .action(async ({ keypair, nativeTokenAccount, amount }) => {
+    await wrapNative(
+      CONNECTION,
+      loadKeypair(keypair),
+      new PublicKey(nativeTokenAccount),
+      Number(amount)
+    );
+  });
+
+program
+  .command("unwrap-sol")
+  .requiredOption("-k, --keypair <keypair>")
+  .requiredOption(
+    "-n, --native-token-account <PublicKey>",
+    "The native token account address that is the source of the wrapped SOL"
+  )
+  .addHelpText("beforeAll", "Get SOL from a wrapped SOL token account")
+  .action(async ({ keypair, nativeTokenAccount }) => {
+    await unwrapNative(
+      CONNECTION,
+      loadKeypair(keypair),
+      new PublicKey(nativeTokenAccount)
+    );
+  });
+
+program
+  .command("get-pools")
+  .requiredOption("-k, --keypair <keypair>")
+  .addHelpText("beforeAll", "Get all flash loan pools")
+  .action(async ({ keypair, nativeTokenAccount }) => {
+    await getPoolAccounts(CONNECTION, loadKeypair(keypair));
   });
 
 program.parse();
